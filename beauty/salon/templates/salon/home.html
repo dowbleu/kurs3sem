@@ -1,0 +1,92 @@
+{% extends 'salon/base.html' %}
+
+{% block title %}Главная - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card text-center">
+            <div class="card-body py-5">
+                <h1 class="display-4 mb-4">Салон красоты LUMÉ</h1>
+                <p class="lead mb-4">Добро пожаловать в систему онлайн-записи!</p>
+                
+                {% if user.is_authenticated %}
+                    <div class="alert alert-success">
+                        <h4>Привет, {{ user.first_name|default:user.username }}!</h4>
+                        <p>Вы успешно вошли в систему.</p>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'salon:booking_list' %}" class="btn btn-primary btn-lg me-md-2">
+                            Просмотреть записи
+                        </a>
+                        <a href="{% url 'salon:booking_create' %}" class="btn btn-success btn-lg">
+                            Создать новую запись
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <h4>Войдите в систему</h4>
+                        <p>Для создания записи необходимо войти в свой аккаунт</p>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'salon:login' %}" class="btn btn-primary btn-lg me-md-2">
+                            Войти
+                        </a>
+                        <a href="{% url 'salon:register' %}" class="btn btn-outline-primary btn-lg">
+                            Зарегистрироваться
+                        </a>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Новый пользователь?</h5>
+                            <p>Зарегистрируйтесь, чтобы создавать записи к мастерам</p>
+                            <a href="{% url 'salon:register' %}" class="btn btn-outline-primary">
+                                Создать аккаунт
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Уже есть аккаунт?</h5>
+                            <p>Войдите, чтобы управлять своими записями</p>
+                            <a href="{% url 'salon:login' %}" class="btn btn-primary">
+                                Войти
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3>Мастера</h3>
+                        <p class="text-muted">Профессиональные мастера с большим опытом работы</p>
+                        <a href="{% url 'salon:booking_list' %}" class="btn btn-outline-primary">Посмотреть</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3>Услуги</h3>
+                        <p class="text-muted">Широкий спектр услуг по доступным ценам</p>
+                        <a href="{% url 'salon:booking_list' %}" class="btn btn-outline-primary">Посмотреть</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3>Отзывы</h3>
+                        <p class="text-muted">Читайте отзывы наших клиентов</p>
+                        <a href="{% url 'salon:booking_list' %}" class="btn btn-outline-primary">Посмотреть</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,36 @@
+{% extends 'salon/base.html' %}
+
+{% block title %}Удаление записи #{{ booking.booking_id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0">Удаление записи</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <h5>Вы уверены, что хотите удалить эту запись?</h5>
+            <p>Это действие нельзя отменить!</p>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>Информация о записи:</h5>
+                <p><strong>ID записи:</strong> #{{ booking.booking_id }}</p>
+                <p><strong>Клиент:</strong> {{ booking.user.name }} ({{ booking.user.email }})</p>
+                <p><strong>Мастер:</strong> {{ booking.master.full_name }}</p>
+                <p><strong>Услуга:</strong> {{ booking.service.title }}</p>
+                <p><strong>Дата и время:</strong> {{ booking.appointment_datetime|date:"d.m.Y H:i" }}</p>
+                <p><strong>Статус:</strong> {{ booking.get_status_display }}</p>
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Да, удалить</button>
+            <a href="{% url 'salon:booking_detail' booking.pk %}" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
