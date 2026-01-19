@@ -7,9 +7,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
 from datetime import timedelta
-from .models import Booking, Master, Service, Review
-from .serializers import BookingSerializer, MasterSerializer, ServiceSerializer, ReviewSerializer
-from .filters import BookingFilter, MasterFilter, ServiceFilter, ReviewFilter
+from .models import Booking, Master, Service
+from .serializers import BookingSerializer, MasterSerializer, ServiceSerializer
+from .filters import BookingFilter, MasterFilter, ServiceFilter
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -161,16 +161,16 @@ class MasterViewSet(viewsets.ModelViewSet):
         experienced = self.request.query_params.get('experienced', None)
         if experienced == 'true':
             queryset = queryset.filter(
-                Q(experience_years__gte=5) | Q(specialization__icontains='старший')
+                Q(experience_years__gte=5) | Q(specialization__icontains='стрижк')
             )
         
-        # Сложный Q-запрос с OR, AND, NOT: опытные мастера (не новички), но не слишком старые
+        # Сложный Q-запрос с OR, AND, NOT: опытные мастера (опыт >= 5 лет ИЛИ специализация содержит "стрижк" или "окрашивание"), 
+        # но не новички (опыт >= 1 год)
         senior_not_junior = self.request.query_params.get('senior_not_junior', None)
         if senior_not_junior == 'true':
             queryset = queryset.filter(
-                (Q(experience_years__gte=5) | Q(specialization__icontains='старший')) &
-                ~Q(experience_years__lt=1) &
-                ~Q(specialization__icontains='новичок')
+                (Q(experience_years__gte=5) | Q(specialization__icontains='стрижк') | Q(specialization__icontains='окрашивание')) &
+                ~Q(experience_years__lt=1)
             )
         
         return queryset
@@ -237,44 +237,6 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
         if search_term:
             queryset = queryset.filter(
                 Q(title__icontains=search_term) | Q(description__icontains=search_term)
-            )
-        
-        return queryset
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    """ViewSet для модели Review"""
-    queryset = Review.objects.select_related('user', 'master').all()
-    serializer_class = ReviewSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = ReviewFilter
-    search_fields = ['user__name', 'master__full_name', 'comment']
-    ordering_fields = ['rating', 'created_at']
-    ordering = ['-created_at']
-    
-    def get_queryset(self):
-        """
-        Переопределяем queryset с использованием Q-объектов
-        """
-        queryset = Review.objects.select_related('user', 'master').all()
-        
-        # Фильтрация по рейтингу (Q-запрос)
-        min_rating = self.request.query_params.get('min_rating', None)
-        max_rating = self.request.query_params.get('max_rating', None)
-        
-        if min_rating or max_rating:
-            q_objects = Q()
-            if min_rating:
-                q_objects &= Q(rating__gte=min_rating)
-            if max_rating:
-                q_objects &= Q(rating__lte=max_rating)
-            queryset = queryset.filter(q_objects)
-        
-        # Q-запрос: отзывы с высоким рейтингом (4-5) или с комментарием
-        high_rating = self.request.query_params.get('high_rating', None)
-        if high_rating == 'true':
-            queryset = queryset.filter(
-                Q(rating__gte=4) | Q(comment__isnull=False)
             )
         
         return queryset

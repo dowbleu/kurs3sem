@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Booking, Master, Service, User, Review
+from django.utils import timezone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -51,27 +52,17 @@ class BookingSerializer(serializers.ModelSerializer):
     
     def validate_appointment_datetime(self, value):
         """Валидация: дата записи должна быть в будущем"""
-        from django.utils import timezone
-        if value <= timezone.now():
-            raise serializers.ValidationError("Дата записи должна быть в будущем.")
+        now = timezone.now()
+        # Сравниваем с учетом timezone
+        if value <= now:
+            raise serializers.ValidationError(
+                "Дата и время записи должны быть в будущем. Выберите дату позже текущего момента."
+            )
         return value
-    
-    def validate(self, data):
-        """Валидация на уровне всего объекта"""
-        appointment_datetime = data.get('appointment_datetime')
-        status = data.get('status', self.instance.status if self.instance else 'pending')
-        
-        # Проверка: нельзя создавать запись с завершенным статусом
-        if status == 'completed' and not self.instance:
-            raise serializers.ValidationError({
-                'status': 'Нельзя создавать запись сразу с статусом "Завершена".'
-            })
-        
-        return data
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Review с валидацией"""
+    """Сериализатор для модели Review (без валидации, так как не используется на сайте)"""
     user_detail = UserSerializer(source='user', read_only=True)
     master_detail = MasterSerializer(source='master', read_only=True)
     
@@ -82,16 +73,3 @@ class ReviewSerializer(serializers.ModelSerializer):
             'rating', 'comment', 'created_at'
         ]
         read_only_fields = ['review_id', 'created_at']
-    
-    def validate_rating(self, value):
-        """Валидация рейтинга: должен быть от 1 до 5"""
-        if value < 1 or value > 5:
-            raise serializers.ValidationError("Рейтинг должен быть от 1 до 5.")
-        return value
-    
-    def validate_comment(self, value):
-        """Валидация комментария: минимальная длина"""
-        if value and len(value.strip()) < 10:
-            raise serializers.ValidationError("Комментарий должен содержать минимум 10 символов.")
-        return value
-

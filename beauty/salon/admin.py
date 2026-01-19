@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from django.urls import reverse
@@ -11,11 +12,6 @@ from .models import User, Service, Master, Image, MasterService, Booking, Review
 class BookingResource(resources.ModelResource):
     """Кастомный ресурс для экспорта Booking с дополнительными методами"""
     
-    # Кастомные поля для экспорта
-    status_display = resources.Field(attribute='status', column_name='Статус (текст)')
-    user_name = resources.Field(attribute='user__name', column_name='Имя клиента')
-    master_name = resources.Field(attribute='master__full_name', column_name='Имя мастера')
-    
     class Meta:
         model = Booking
         fields = ('booking_id', 'user__name', 'user__email', 'master__full_name', 
@@ -23,11 +19,9 @@ class BookingResource(resources.ModelResource):
         export_order = ('booking_id', 'user__name', 'user__email', 'master__full_name',
                        'service__title', 'appointment_datetime', 'status', 'created_at')
     
-    def get_export_queryset(self):
-        """Кастомизация queryset для экспорта - исключаем отмененные записи"""
-        queryset = super().get_export_queryset()
-        # Можно добавить фильтрацию, например, только активные записи
-        return queryset.exclude(status='cancelled')
+    def dehydrate_booking_id(self, booking):
+        """Кастомизация поля booking_id - добавляем префикс"""
+        return f"BK-{booking.booking_id}"
     
     def dehydrate_status(self, booking):
         """Кастомизация поля status при экспорте - добавляем текстовое представление"""
@@ -44,10 +38,6 @@ class BookingResource(resources.ModelResource):
         if booking.appointment_datetime:
             return booking.appointment_datetime.strftime('%d.%m.%Y %H:%M')
         return ''
-    
-    def get_booking_id(self, booking):
-        """Кастомный метод для получения booking_id с префиксом"""
-        return f"BK-{booking.booking_id}"
 
 
 class MasterResource(resources.ModelResource):
@@ -166,8 +156,8 @@ class ServiceAdmin(ImportExportModelAdmin):
             links = []
             for master in masters:
                 url = reverse('admin:salon_master_change', args=[master.pk])
-                links.append(f'<a href="{url}">{master.full_name}</a>')
-            return format_html(', '.join(links))
+                links.append(format_html('<a href="{}">{}</a>', url, master.full_name))
+            return mark_safe(', '.join(str(link) for link in links))
         return '-'
     get_master_link.short_description = 'Мастера'
 

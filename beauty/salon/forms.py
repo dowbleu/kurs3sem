@@ -18,6 +18,36 @@ class CustomUserCreationForm(UserCreationForm):
             'email': 'Email',
         }
     
+    def clean_email(self):
+        """Валидация email: проверка уникальности"""
+        email = self.cleaned_data.get('email')
+        if email:
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    "Пользователь с таким email уже зарегистрирован. Используйте другой email или войдите в систему."
+                )
+                
+            if DjangoUser.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    "Пользователь с таким email уже зарегистрирован. Используйте другой email или войдите в систему."
+                )
+        return email
+    
+    def clean_first_name(self):
+        """Валидация имени: проверка на пустоту и минимальную длину"""
+        first_name = self.cleaned_data.get('first_name')
+        if first_name:
+            first_name = first_name.strip()
+            if len(first_name) < 2:
+                raise forms.ValidationError(
+                    "Имя должно содержать минимум 2 символа."
+                )
+            if not first_name.replace(' ', '').replace('-', '').isalpha():
+                raise forms.ValidationError(
+                    "Имя может содержать только буквы, пробелы и дефисы."
+                )
+        return first_name
+    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
@@ -80,6 +110,24 @@ class BookingForm(forms.ModelForm):
             'appointment_datetime': 'Дата и время записи',
             'status': 'Статус',
         }
+    
+    def clean_appointment_datetime(self):
+        """Валидация: дата записи должна быть в будущем"""
+        from django.utils import timezone
+        appointment_datetime = self.cleaned_data.get('appointment_datetime')
+        
+        if appointment_datetime:
+            # Если datetime naive (без timezone), делаем его aware
+            if timezone.is_naive(appointment_datetime):
+                appointment_datetime = timezone.make_aware(appointment_datetime)
+            
+            now = timezone.now()
+            # Сравниваем с учетом timezone
+            if appointment_datetime <= now:
+                raise forms.ValidationError(
+                    "Дата и время записи должны быть в будущем. Выберите дату позже текущего момента."
+                )
+        return appointment_datetime
 
 
 class BookingStatusUpdateForm(forms.ModelForm):
